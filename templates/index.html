@@ -1,58 +1,103 @@
 <!DOCTYPE html>
-     <html lang="en">
-     <head>
-         <meta charset="UTF-8">
-         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-         <title>Satscan.co</title>
-         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-         <style>
-             body { background-color: #F5F6FA; font-family: Arial, sans-serif; }
-             header { background-color: #0033A0; color: white; padding: 10px; text-align: center; }
-             footer { background-color: #6C757D; color: white; padding: 10px; text-align: center; }
-             .donation { margin: 20px 0; }
-             .btn-primary { background-color: #0033A0; border-color: #0033A0; }
-             .btn-primary:hover { background-color: #002680; }
-         </style>
-     </head>
-     <body>
-         <header>
-             <h1>Satscan.co</h1>
-             <nav>
-                 <a href="/" class="text-white mx-2">Home</a>
-                 <a href="/faucet" class="text-white mx-2">Faucet</a>
-             </nav>
-         </header>
-         <main class="container mt-4">
-             <h2>Welcome to Satscan.co</h2>
-             <p>Your Bitcoin blockchain explorer and Testnet faucet.</p>
-             <div class="donation">
-                 <h3>Support Us</h3>
-                 <div class="mb-3">
-                     <h4>Bitcoin Donation</h4>
-                     <p>Address: <code>bc1q6zargh20aeyr65gxlxw0ltszr5fcze0e6yeyta</code></p>
-                     <!-- Replace with your actual Bitcoin address from Sparrow Wallet if different -->
-                 </div>
-                 <div class="mb-3">
-                     <h4>Lightning Donation</h4>
-                     <p>Address: <code>lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhhqun0veskuetrd3hhxet5xgmsygg923</code></p>
-                     <!-- Replace with your actual Lightning address if different -->
-                 </div>
-             </div>
-             <div class="faucet-section">
-                 <h3>Testnet Faucet</h3>
-                 <p>Get 0.01 tBTC every hour (coming soon).</p>
-                 <form action="/faucet" method="POST" class="mb-3">
-                     <div class="mb-3">
-                         <label for="address" class="form-label">Testnet Address</label>
-                         <input type="text" class="form-control" id="address" name="address" placeholder="Enter Testnet address">
-                     </div>
-                     <button type="submit" class="btn btn-primary" disabled>Request tBTC</button>
-                     <p class="text-muted">Faucet functionality pending node setup.</p>
-                 </form>
-             </div>
-         </main>
-         <footer>
-             <p>© 2025 Satscan.co</p>
-         </footer>
-     </body>
-     </html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Satscan | Bitcoin Explorer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar px-3 py-1 d-flex justify-content-between align-items-center">
+    <div class="text-white small">
+      <span id="btc-price">BTC Price: Loading...</span> |
+      <span id="btc-fee">Fee: Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header with Logo -->
+  <header class="hero-section text-white px-4 py-4">
+    <div class="d-flex align-items-center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Bitcoin Logo" class="btc-logo me-2">
+      <h1 class="mb-0">Satscan</h1>
+    </div>
+    <p class="lead">The Bitcoin Blockchain Explorer</p>
+
+    <!-- Search Bar -->
+    <div class="search-bar rounded mt-3 d-flex">
+      <select class="form-select w-auto border-0">
+        <option>All Filters</option>
+        <option>Address</option>
+        <option>Txn Hash</option>
+        <option>Block</option>
+      </select>
+      <input type="text" class="form-control border-0" placeholder="Search by Address / Txn Hash / Block ...">
+      <button class="btn search-btn"><strong>🔍</strong></button>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="container stats-cards py-4">
+    <div class="row text-center">
+      <div class="col-md-3 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h6>BTC Price</h6>
+            <p id="btc-price-card" class="fw-bold text-success">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h6>Market Cap</h6>
+            <p id="btc-marketcap" class="fw-bold">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h6>Latest Block</h6>
+            <p id="btc-block" class="fw-bold">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h6>Mempool Fee</h6>
+            <p id="btc-fee-card" class="fw-bold text-warning">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    async function fetchBTCStats() {
+      try {
+        const coingecko = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true');
+        const btcData = await coingecko.json();
+        document.getElementById('btc-price').innerText = `BTC Price: $${btcData.bitcoin.usd.toLocaleString()}`;
+        document.getElementById('btc-price-card').innerText = `$${btcData.bitcoin.usd.toLocaleString()}`;
+        document.getElementById('btc-marketcap').innerText = `$${Math.round(btcData.bitcoin.usd_market_cap).toLocaleString()}`;
+
+        const blockHeight = await (await fetch('https://mempool.space/api/blocks/tip/height')).text();
+        document.getElementById('btc-block').innerText = `#${blockHeight}`;
+
+        const fees = await (await fetch('https://mempool.space/api/v1/fees/recommended')).json();
+        document.getElementById('btc-fee').innerText = `Fee: ${fees.fastestFee} sats/vB`;
+        document.getElementById('btc-fee-card').innerText = `${fees.fastestFee} sats/vB`;
+      } catch (err) {
+        console.error("Error fetching BTC stats:", err);
+      }
+    }
+
+    fetchBTCStats();
+    setInterval(fetchBTCStats, 60000);
+  </script>
+</body>
+</html>
