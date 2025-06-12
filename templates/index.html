@@ -6,98 +6,105 @@
   <title>Satscan | Bitcoin Explorer</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="templates/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .qr-hover {
+      position: relative;
+      display: inline-block;
+    }
+    .qr-hover img {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 150px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 5px;
+      z-index: 10;
+    }
+    .qr-hover:hover img {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <!-- Top Bar -->
-  <div class="top-bar px-3 py-1 d-flex justify-content-between align-items-center">
-    <div class="text-white small">
-      <span id="btc-price">BTC Price: Loading...</span> |
-      <span id="btc-fee">Fee: Loading...</span>
-    </div>
-  </div>
 
-  <!-- Header with Logo -->
-  <header class="hero-section text-white px-4 py-4">
-    <div class="d-flex align-items-center">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Bitcoin Logo" class="btc-logo me-2">
-      <h1 class="mb-0">Satscan</h1>
+<!-- Donations Section -->
+<div class="container py-5">
+  <h5>Support Satscan</h5>
+  <p>If you like this project, consider donating Bitcoin or Lightning.</p>
+  <div class="row">
+    <div class="col-md-6">
+      <h6>Bitcoin (on-chain)</h6>
+      <div class="qr-hover">
+        <code id="btcAddr">bc1q6zargh20aeyr65gxlxw0ltszr5fcze0e6yeyta</code>
+        <button onclick="copyToClipboard('btcAddr')">📋</button>
+        <img src="templates/BTC Wallet QR Code.jpg" alt="Bitcoin QR Code">
+      </div>
     </div>
-    <p class="lead">The Bitcoin Blockchain Explorer</p>
-
-    <!-- Search Bar -->
-    <div class="search-bar rounded mt-3 d-flex">
-      <select class="form-select w-auto border-0">
-        <option>All Filters</option>
-        <option>Address</option>
-        <option>Txn Hash</option>
-        <option>Block</option>
-      </select>
-      <input type="text" class="form-control border-0" placeholder="Search by Address / Txn Hash / Block ...">
-      <button class="btn search-btn"><strong>🔍</strong></button>
-    </div>
-  </header>
-
-  <!-- Stats Cards -->
-  <div class="container stats-cards py-4">
-    <div class="row text-center">
-      <div class="col-md-3 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h6>BTC Price</h6>
-            <p id="btc-price-card" class="fw-bold text-success">Loading...</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h6>Market Cap</h6>
-            <p id="btc-marketcap" class="fw-bold">Loading...</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h6>Latest Block</h6>
-            <p id="btc-block" class="fw-bold">Loading...</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h6>Mempool Fee</h6>
-            <p id="btc-fee-card" class="fw-bold text-warning">Loading...</p>
-          </div>
-        </div>
+    <div class="col-md-6">
+      <h6>Lightning (Wallet of Satoshi)</h6>
+      <div class="qr-hover">
+        <code id="lnAddr">lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhhqun0veskuetrd3hhxet5xgmsygg923</code>
+        <button onclick="copyToClipboard('lnAddr')">📋</button>
+        <img src="templates/Lightning Wallet QR Code.jpg" alt="Lightning QR Code">
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Scripts -->
-  <script>
-    async function fetchBTCStats() {
-      try {
-        const coingecko = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true');
-        const btcData = await coingecko.json();
-        document.getElementById('btc-price').innerText = `BTC Price: $${btcData.bitcoin.usd.toLocaleString()}`;
-        document.getElementById('btc-price-card').innerText = `$${btcData.bitcoin.usd.toLocaleString()}`;
-        document.getElementById('btc-marketcap').innerText = `$${Math.round(btcData.bitcoin.usd_market_cap).toLocaleString()}`;
+<!-- Live Blocks and Transactions -->
+<div class="container py-5">
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Latest Blocks</h5>
+      <ul id="block-list" class="list-group"></ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Latest Transactions</h5>
+      <ul id="tx-list" class="list-group"></ul>
+    </div>
+  </div>
+</div>
 
-        const blockHeight = await (await fetch('https://mempool.space/api/blocks/tip/height')).text();
-        document.getElementById('btc-block').innerText = `#${blockHeight}`;
+<script>
+  async function loadLiveData() {
+    try {
+      const blocks = await fetch('https://mempool.space/api/v1/blocks').then(res => res.json());
+      const blockList = document.getElementById('block-list');
+      blockList.innerHTML = '';
+      blocks.slice(0, 6).forEach(block => {
+        const item = document.createElement('li');
+        item.className = 'list-group-item';
+        item.innerHTML = `#${block.height} - ${block.extras?.miner || 'Unknown'} - ${block.tx_count} txns`;
+        blockList.appendChild(item);
+      });
 
-        const fees = await (await fetch('https://mempool.space/api/v1/fees/recommended')).json();
-        document.getElementById('btc-fee').innerText = `Fee: ${fees.fastestFee} sats/vB`;
-        document.getElementById('btc-fee-card').innerText = `${fees.fastestFee} sats/vB`;
-      } catch (err) {
-        console.error("Error fetching BTC stats:", err);
-      }
+      const txs = await fetch('https://mempool.space/api/mempool/recent').then(res => res.json());
+      const txList = document.getElementById('tx-list');
+      txList.innerHTML = '';
+      txs.slice(0, 6).forEach(tx => {
+        const item = document.createElement('li');
+        item.className = 'list-group-item';
+        item.innerHTML = `<code>${tx.txid.substring(0, 12)}...</code> — ${tx.value} sats`;
+        txList.appendChild(item);
+      });
+    } catch (err) {
+      console.error('Error loading block/tx data:', err);
     }
+  }
 
-    fetchBTCStats();
-    setInterval(fetchBTCStats, 60000);
-  </script>
+  function copyToClipboard(id) {
+    const copyText = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(copyText).then(() => {
+      alert('Address copied to clipboard');
+    });
+  }
+
+  loadLiveData();
+  setInterval(loadLiveData, 30000);
+</script>
+
 </body>
 </html>
