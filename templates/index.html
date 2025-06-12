@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Satscan | Bitcoin Explorer</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .qr-hover {
@@ -29,41 +29,61 @@
   </style>
 </head>
 <body>
-
-<!-- Donations Section -->
-<div class="container py-5">
-  <h5>Support Satscan</h5>
-  <p>If you like this project, consider donating Bitcoin or Lightning.</p>
-  <div class="row">
-    <div class="col-md-6">
-      <h6>Bitcoin (on-chain)</h6>
-      <div class="qr-hover">
-        <code id="btcAddr">bc1q6zargh20aeyr65gxlxw0ltszr5fcze0e6yeyta</code>
-        <button onclick="copyToClipboard('btcAddr')">📋</button>
-        <img src="templates/BTC Wallet QR Code.jpg" alt="Bitcoin QR Code">
-      </div>
-    </div>
-    <div class="col-md-6">
-      <h6>Lightning (Wallet of Satoshi)</h6>
-      <div class="qr-hover">
-        <code id="lnAddr">lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhhqun0veskuetrd3hhxet5xgmsygg923</code>
-        <button onclick="copyToClipboard('lnAddr')">📋</button>
-        <img src="templates/Lightning Wallet QR Code.jpg" alt="Lightning QR Code">
-      </div>
+<div class="container py-4">
+  <div class="row text-center mb-4">
+    <div class="col">
+      <h2 class="text-warning">Satscan</h2>
+      <p class="text-secondary">Bitcoin Blockchain Explorer</p>
     </div>
   </div>
-</div>
 
-<!-- Live Blocks and Transactions -->
-<div class="container py-5">
-  <div class="row">
+  <div class="row text-center stats-cards mb-5">
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body"><h6>BTC Price</h6><p id="btcPrice" class="fw-bold text-success">...</p></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body"><h6>Market Cap</h6><p id="marketCap" class="fw-bold">...</p></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body"><h6>Finalised Block</h6><p id="finalBlock" class="fw-bold">...</p></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body"><h6>Tx Fee (Low)</h6><p id="feeRate" class="text-warning fw-bold">...</p></div></div></div>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-12">
+      <h5 class="text-white">Transaction Volume (14 Days)</h5>
+      <canvas id="txChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="row mb-5">
     <div class="col-md-6">
-      <h5>Latest Blocks</h5>
+      <h5 class="text-white">Latest Blocks</h5>
       <ul id="block-list" class="list-group"></ul>
     </div>
     <div class="col-md-6">
-      <h5>Latest Transactions</h5>
+      <h5 class="text-white">Latest Transactions</h5>
       <ul id="tx-list" class="list-group"></ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 text-white">
+      <h5>Support Satscan</h5>
+      <p>If you like this project, consider donating Bitcoin or Lightning.</p>
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Bitcoin (on-chain)</h6>
+          <div class="qr-hover">
+            <code id="btcAddr">bc1q6zargh20aeyr65gxlxw0ltszr5fcze0e6yeyta</code>
+            <button onclick="copyToClipboard('btcAddr')">📋</button>
+            <img src="templates/BTC Wallet QR Code.jpg" alt="Bitcoin QR Code">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h6>Lightning (Wallet of Satoshi)</h6>
+          <div class="qr-hover">
+            <code id="lnAddr">lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhhqun0veskuetrd3hhxet5xgmsygg923</code>
+            <button onclick="copyToClipboard('lnAddr')">📋</button>
+            <img src="templates/Lightning Wallet QR Code.jpg" alt="Lightning QR Code">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -71,7 +91,15 @@
 <script>
   async function loadLiveData() {
     try {
-      const blocks = await fetch('https://mempool.space/api/v1/blocks').then(res => res.json());
+      const [blocks, txs, fees] = await Promise.all([
+        fetch('https://mempool.space/api/v1/blocks').then(res => res.json()),
+        fetch('https://mempool.space/api/mempool/recent').then(res => res.json()),
+        fetch('https://mempool.space/api/v1/fees/recommended').then(res => res.json())
+      ]);
+
+      document.getElementById('feeRate').innerText = `${fees.hourFee} sats/vB`;
+      document.getElementById('finalBlock').innerText = blocks[0].height;
+
       const blockList = document.getElementById('block-list');
       blockList.innerHTML = '';
       blocks.slice(0, 6).forEach(block => {
@@ -81,7 +109,6 @@
         blockList.appendChild(item);
       });
 
-      const txs = await fetch('https://mempool.space/api/mempool/recent').then(res => res.json());
       const txList = document.getElementById('tx-list');
       txList.innerHTML = '';
       txs.slice(0, 6).forEach(tx => {
@@ -95,16 +122,59 @@
     }
   }
 
+  async function loadMarketData() {
+    try {
+      const data = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true').then(res => res.json());
+      const price = data.bitcoin.usd;
+      const cap = data.bitcoin.usd_market_cap.toLocaleString();
+      document.getElementById('btcPrice').innerText = `$${price}`;
+      document.getElementById('marketCap').innerText = `$${cap}`;
+    } catch (err) {
+      console.error('Price load failed:', err);
+    }
+  }
+
+  async function loadChartData() {
+    try {
+      const history = await fetch('https://mempool.space/api/v1/tx-stats/1d').then(res => res.json());
+      const labels = history.slice(-14).map(item => new Date(item[0] * 1000).toLocaleDateString());
+      const data = history.slice(-14).map(item => item[1]);
+      new Chart(document.getElementById('txChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Tx Count',
+            data,
+            borderColor: '#f7931a',
+            backgroundColor: 'rgba(247,147,26,0.1)',
+            tension: 0.4
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: false },
+            x: { ticks: { maxTicksLimit: 14 } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Chart failed:', err);
+    }
+  }
+
   function copyToClipboard(id) {
     const copyText = document.getElementById(id).innerText;
-    navigator.clipboard.writeText(copyText).then(() => {
-      alert('Address copied to clipboard');
-    });
+    navigator.clipboard.writeText(copyText).then(() => alert('Address copied to clipboard'));
   }
 
   loadLiveData();
+  loadMarketData();
+  loadChartData();
   setInterval(loadLiveData, 30000);
 </script>
-
 </body>
 </html>
