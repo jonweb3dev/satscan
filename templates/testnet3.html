@@ -1,1 +1,42 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Satscan - Testnet 3</title>
+  <link rel="stylesheet" href="style-testnet3.css">
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><span class="logo-symbol">₿</span> Satscan <small>[Testnet 3]</small></div>
+    <div class="network-switcher">
+      <select onchange="location = this.value;">
+        <option value="index.html">index</option>
+        <option value="testnet3.html" selected>Testnet 3</option>
+        <option value="testnet4.html">Testnet 4</option>
+      </select>
+    </div>
+  </div>
+  <div class="banner">
+    <input type="text" placeholder="Search blocks, transactions, addresses...">
+    <button>Search</button>
+  </div>
+  <div class="content">
+    <div class="stat">Latest Block: <span id="latestBlock">Loading...</span></div>
+    <div class="stat">Latest Transaction: <span id="latestTx">Loading...</span></div>
+  </div>
+  <script>
+    fetch('https://mempool.space/testnet/api/blocks')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('latestBlock').textContent = data[0].height;
+      });
+
+    fetch('https://mempool.space/testnet/api/mempool/recent')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('latestTx').textContent = data[0].value + " sats";
+      });
+  </script>
+</body>
+</html>
