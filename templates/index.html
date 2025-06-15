@@ -1,1 +1,49 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Satscan - index</title>
+  <link rel="stylesheet" href="style-index.css">
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><span class="logo-symbol">₿</span> Satscan</div>
+    <div class="network-switcher">
+      <select onchange="location = this.value;">
+        <option value="index.html" selected>index</option>
+        <option value="testnet3.html">Testnet 3</option>
+        <option value="testnet4.html">Testnet 4</option>
+      </select>
+    </div>
+  </div>
+  <div class="banner">
+    <input type="text" placeholder="Search blocks, transactions, addresses...">
+    <button>Search</button>
+  </div>
+  <div class="content">
+    <div class="stat">Price: <span id="price">Loading...</span></div>
+    <div class="stat">Latest Block: <span id="latestBlock">Loading...</span></div>
+    <div class="stat">Latest Transaction: <span id="latestTx">Loading...</span></div>
+  </div>
+  <script>
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('price').textContent = `$${data.bitcoin.usd.toLocaleString()}`;
+      });
+
+    fetch('https://mempool.space/api/blocks')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('latestBlock').textContent = data[0].height;
+      });
+
+    fetch('https://mempool.space/api/mempool/recent')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('latestTx').textContent = data[0].value + " sats";
+      });
+  </script>
+</body>
+</html>
