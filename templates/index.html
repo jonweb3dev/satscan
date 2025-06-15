@@ -3,47 +3,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Satscan - index</title>
+  <title>Satscan - Pixel Mainnet</title>
   <link rel="stylesheet" href="style-index.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="header">
-    <div class="logo"><span class="logo-symbol">₿</span> Satscan</div>
-    <div class="network-switcher">
+  <header class="header">
+    <div class="logo">₿ Satscan</div>
+    <div class="network">
       <select onchange="location = this.value;">
-        <option value="index.html" selected>index</option>
-        <option value="testnet3.html">Testnet 3</option>
-        <option value="testnet4.html">Testnet 4</option>
+        <option value="index.html" selected>Mainnet</option>
+        <option value="testnet3.html">Testnet (v3)</option>
+        <option value="testnet4.html">Signet (Testnet 4)</option>
       </select>
     </div>
-  </div>
+  </header>
   <div class="banner">
-    <input type="text" placeholder="Search blocks, transactions, addresses...">
+    <span id="btcPrice">BTC Price: Loading...</span>
+    <span id="feeRate">Fee Rate: ...</span>
+  </div>
+  <div class="search-bar">
+    <input type="text" placeholder="Search address / block / transaction..." />
     <button>Search</button>
   </div>
-  <div class="content">
-    <div class="stat">Price: <span id="price">Loading...</span></div>
-    <div class="stat">Latest Block: <span id="latestBlock">Loading...</span></div>
-    <div class="stat">Latest Transaction: <span id="latestTx">Loading...</span></div>
-  </div>
+  <main class="dashboard">
+    <div class="card">
+      <h3>Market Cap</h3>
+      <p id="marketCap">Loading...</p>
+    </div>
+    <div class="card">
+      <h3>Latest Block</h3>
+      <p id="latestBlock">Loading...</p>
+    </div>
+    <div class="card chart-card">
+      <h3>Tx History (14 Days)</h3>
+      <canvas id="txChart" width="300" height="200"></canvas>
+    </div>
+  </main>
   <script>
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('price').textContent = `$${data.bitcoin.usd.toLocaleString()}`;
-      });
+    async function loadLiveData() {
+      const [blocks, fees] = await Promise.all([
+        fetch("https://mempool.space/api/v1/blocks").then(res => res.json()),
+        fetch("https://mempool.space/api/v1/fees/recommended").then(res => res.json())
+      ]);
+      document.getElementById("latestBlock").innerText = `#${blocks[0].height}`;
+      document.getElementById("feeRate").innerText = `${fees.hourFee} sats/vB`;
+    }
 
-    fetch('https://mempool.space/api/blocks')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('latestBlock').textContent = data[0].height;
-      });
+    async function loadMarketData() {
+      const data = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true").then(res => res.json());
+      document.getElementById("btcPrice").innerText = `BTC Price: $${data.bitcoin.usd}`;
+      document.getElementById("marketCap").innerText = `$${data.bitcoin.usd_market_cap.toLocaleString()}`;
+    }
 
-    fetch('https://mempool.space/api/mempool/recent')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('latestTx').textContent = data[0].value + " sats";
+    async function loadChartData() {
+      const history = await fetch("https://mempool.space/api/v1/tx-stats/1d").then(res => res.json());
+      const labels = history.slice(-14).map(item => new Date(item[0] * 1000).toLocaleDateString());
+      const data = history.slice(-14).map(item => item[1]);
+      new Chart(document.getElementById("txChart"), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: "Transactions",
+            data,
+            borderColor: "#f7931a",
+            backgroundColor: "rgba(247,147,26,0.1)",
+            tension: 0.4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } }
+        }
       });
+    }
+
+    loadLiveData();
+    loadMarketData();
+    loadChartData();
   </script>
 </body>
 </html>
