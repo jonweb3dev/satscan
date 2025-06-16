@@ -1,87 +1,84 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Satscan - Pixel Mainnet</title>
-  <link rel="stylesheet" href="style-index.css">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satscan - Mainnet</title>
+    <link rel="stylesheet" href="style-mainnet.css">
 </head>
 <body>
-  <header class="header">
-    <div class="logo">₿ Satscan</div>
-    <div class="network">
-      <select onchange="location = this.value;">
-        <option value="index.html" selected>Mainnet</option>
-        <option value="testnet3.html">Testnet (v3)</option>
-        <option value="testnet4.html">Signet (Testnet 4)</option>
-      </select>
+<header>
+    <div class="top-bar">
+        <span>₿ $<span id="btc-price">Loading...</span> (<span id="btc-change">0%</span>)</span>
+        <span>Transaction Fee: <span id="tx-fee">Loading...</span></span>
+        <span style="float:right">
+            <select onchange="location=this.value;">
+                <option value="index.html" selected>Mainnet</option>
+                <option value="testnet.html" >Testnet (v3)</option>
+                <option value="signet.html" >Signet (Testnet 4)</option>
+            </select>
+        </span>
     </div>
-  </header>
-  <div class="banner">
-    <span id="btcPrice">BTC Price: Loading...</span>
-    <span id="feeRate">Fee Rate: ...</span>
-  </div>
-  <div class="search-bar">
-    <input type="text" placeholder="Search address / block / transaction..." />
-    <button>Search</button>
-  </div>
-  <main class="dashboard">
-    <div class="card">
-      <h3>Market Cap</h3>
-      <p id="marketCap">Loading...</p>
+    <div class="nav-bar">
+        <div class="logo"><img src="pixel-bitcoin-logo.png" alt="₿"> SATSCAN</div>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Blockchain</a>
+            <a href="#">BRC20</a>
+            <a href="#">Ordinals</a>
+            <a href="#">More</a>
+        </nav>
     </div>
-    <div class="card">
-      <h3>Latest Block</h3>
-      <p id="latestBlock">Loading...</p>
-    </div>
-    <div class="card chart-card">
-      <h3>Tx History (14 Days)</h3>
-      <canvas id="txChart" width="300" height="200"></canvas>
-    </div>
-  </main>
-  <script>
-    async function loadLiveData() {
-      const [blocks, fees] = await Promise.all([
-        fetch("https://mempool.space/api/v1/blocks").then(res => res.json()),
-        fetch("https://mempool.space/api/v1/fees/recommended").then(res => res.json())
-      ]);
-      document.getElementById("latestBlock").innerText = `#${blocks[0].height}`;
-      document.getElementById("feeRate").innerText = `${fees.hourFee} sats/vB`;
-    }
+</header>
 
-    async function loadMarketData() {
-      const data = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true").then(res => res.json());
-      document.getElementById("btcPrice").innerText = `BTC Price: $${data.bitcoin.usd}`;
-      document.getElementById("marketCap").innerText = `$${data.bitcoin.usd_market_cap.toLocaleString()}`;
-    }
-
-    async function loadChartData() {
-      const history = await fetch("https://mempool.space/api/v1/tx-stats/1d").then(res => res.json());
-      const labels = history.slice(-14).map(item => new Date(item[0] * 1000).toLocaleDateString());
-      const data = history.slice(-14).map(item => item[1]);
-      new Chart(document.getElementById("txChart"), {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: "Transactions",
-            data,
-            borderColor: "#f7931a",
-            backgroundColor: "rgba(247,147,26,0.1)",
-            tension: 0.4
-          }]
-        },
-        options: {
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-
-    loadLiveData();
-    loadMarketData();
-    loadChartData();
-  </script>
+<main>
+    <section class="search-bar" style="margin:16px 0;">
+        <input type="text" placeholder="Search TX, Address, Block..." style="width:400px;padding:6px;">
+    </section>
+    <section class="stats">
+        <div class="box">Bitcoin Price:<br> <span id="btc-price-stat">Loading...</span></div>
+        <div class="box">Market Cap:<br> <span id="market-cap">Loading...</span></div>
+        <div class="box">Transactions:<br> <span id="total-tx">Loading...</span></div>
+        <div class="box">Last Finalised Block:<br> <span id="final-block">Loading...</span></div>
+        <div class="box">Tx History (14 days):<br> <canvas id="tx-chart" width="220" height="70"></canvas></div>
+    </section>
+    <section class="latest-info">
+        <div class="latest-block">
+            <b>Latest Blocks</b>
+            <div id="blocks">
+                <!-- Fill with 5 latest blocks: Block #, Time, Miner, #Tx, Reward, Fees -->
+                <ul>
+                    <li>#123456 – 3 mins ago – Miner1 – 2000 tx – 6.25 BTC – 0.15 BTC fees</li>
+                    <li>#123455 – 10 mins ago – Miner2 – 1800 tx – 6.25 BTC – 0.12 BTC fees</li>
+                    <li>#123454 – 20 mins ago – Miner3 – 2100 tx – 6.25 BTC – 0.16 BTC fees</li>
+                    <li>#123453 – 32 mins ago – Miner4 – 1999 tx – 6.25 BTC – 0.14 BTC fees</li>
+                    <li>#123452 – 47 mins ago – Miner5 – 1750 tx – 6.25 BTC – 0.13 BTC fees</li>
+                </ul>
+            </div>
+        </div>
+        <div class="latest-tx">
+            <b>Latest Transactions</b>
+            <div id="transactions">
+                <!-- Fill with 5 latest transactions: From → To, Fee Paid -->
+                <ul>
+                    <li>From addr1 → addr2 – 0.00012 BTC</li>
+                    <li>From addr3 → addr4 – 0.00005 BTC</li>
+                    <li>From addr5 → addr6 – 0.00007 BTC</li>
+                    <li>From addr7 → addr8 – 0.00003 BTC</li>
+                    <li>From addr9 → addr10 – 0.00009 BTC</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Placeholder: fetch APIs here for live stats
+// Example for Mainnet (mempool.space):
+/*
+fetch('https://mempool.space/api/v1/blocks').then(r=>r.json()).then(blocks=>console.log(blocks));
+fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(r=>r.json()).then(console.log);
+*/
+</script>
 </body>
 </html>
