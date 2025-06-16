@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Satscan - Mainnet</title>
-    <link rel="stylesheet" href="style-index.css">
+    <link rel="stylesheet" href="style-mainnet.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <header>
@@ -14,8 +14,8 @@
         <span style="float:right">
             <select onchange="location=this.value;">
                 <option value="index.html" selected>Mainnet</option>
-                <option value="testnet.html" >Testnet (v3)</option>
-                <option value="signet.html" >Signet (Testnet 4)</option>
+                <option value="testnet.html">Testnet (v3)</option>
+                <option value="signet.html">Signet (Testnet 4)</option>
             </select>
         </span>
     </div>
@@ -36,8 +36,8 @@
         <input type="text" placeholder="Search TX, Address, Block..." style="width:400px;padding:6px;">
     </section>
     <section class="stats">
-        <div class="box">Bitcoin Price:<br> <span id="btc-price-stat">Loading...</span></div>
-        <div class="box">Market Cap:<br> <span id="market-cap">Loading...</span></div>
+        <div class='box'>Bitcoin Price:<br> <span id='btc-price-stat'>Loading...</span></div>
+        <div class='box'>Market Cap:<br> <span id='market-cap'>Loading...</span></div>
         <div class="box">Transactions:<br> <span id="total-tx">Loading...</span></div>
         <div class="box">Last Finalised Block:<br> <span id="final-block">Loading...</span></div>
         <div class="box">Tx History (14 days):<br> <canvas id="tx-chart" width="220" height="70"></canvas></div>
@@ -46,39 +46,80 @@
         <div class="latest-block">
             <b>Latest Blocks</b>
             <div id="blocks">
-                <!-- Fill with 5 latest blocks: Block #, Time, Miner, #Tx, Reward, Fees -->
-                <ul>
-                    <li>#123456 – 3 mins ago – Miner1 – 2000 tx – 6.25 BTC – 0.15 BTC fees</li>
-                    <li>#123455 – 10 mins ago – Miner2 – 1800 tx – 6.25 BTC – 0.12 BTC fees</li>
-                    <li>#123454 – 20 mins ago – Miner3 – 2100 tx – 6.25 BTC – 0.16 BTC fees</li>
-                    <li>#123453 – 32 mins ago – Miner4 – 1999 tx – 6.25 BTC – 0.14 BTC fees</li>
-                    <li>#123452 – 47 mins ago – Miner5 – 1750 tx – 6.25 BTC – 0.13 BTC fees</li>
-                </ul>
+                <ul><li>Loading...</li></ul>
             </div>
         </div>
         <div class="latest-tx">
             <b>Latest Transactions</b>
             <div id="transactions">
-                <!-- Fill with 5 latest transactions: From → To, Fee Paid -->
-                <ul>
-                    <li>From addr1 → addr2 – 0.00012 BTC</li>
-                    <li>From addr3 → addr4 – 0.00005 BTC</li>
-                    <li>From addr5 → addr6 – 0.00007 BTC</li>
-                    <li>From addr7 → addr8 – 0.00003 BTC</li>
-                    <li>From addr9 → addr10 – 0.00009 BTC</li>
-                </ul>
+                <ul><li>Loading...</li></ul>
             </div>
         </div>
     </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Placeholder: fetch APIs here for live stats
-// Example for Mainnet (mempool.space):
-/*
-fetch('https://mempool.space/api/v1/blocks').then(r=>r.json()).then(blocks=>console.log(blocks));
-fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(r=>r.json()).then(console.log);
-*/
+async function updateStats() {
+    try {
+        // Mainnet price/market cap
+        let coingecko = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r=>r.json());
+        let price = coingecko.bitcoin.usd;
+        let cap = coingecko.bitcoin.usd_market_cap;
+        let change = coingecko.bitcoin.usd_24h_change;
+
+        document.getElementById('btc-price').innerText = price.toLocaleString();
+        document.getElementById('btc-change').innerText = (change > 0 ? '+' : '') + change.toFixed(2) + '%';
+        document.getElementById('btc-change').style.color = change >= 0 ? "#6be481" : "#ff5959";
+        document.getElementById('btc-price-stat').innerText = "$" + price.toLocaleString();
+        document.getElementById('market-cap').innerText = "$" + Math.round(cap).toLocaleString();
+
+        // Fees
+        let fees = await fetch('https://mempool.space/api/v1/fees/recommended').then(r=>r.json());
+        document.getElementById('tx-fee').innerText = fees.hourFee + " sats/vB";
+
+        // Blocks
+        let blocks = await fetch('https://mempool.space/api/v1/blocks').then(r=>r.json());
+        let blockList = blocks.slice(0,5).map(b=>
+            `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} tx – ${(b.reward / 1e8).toFixed(2)} BTC – ${(b.fees/1e8).toFixed(3)} BTC fees</li>`
+        ).join('');
+        document.querySelector('#blocks ul').innerHTML = blockList;
+        document.getElementById('final-block').innerText = blocks[0].height;
+
+        // Transactions (from last block for demo)
+        let txList = blocks[0].txs?.slice(0,5) || [];
+        let txHtml = txList.length
+            ? txList.map(tx=>`<li>${tx.txid.slice(0,6)}... → ...${tx.txid.slice(-6)} – ${(tx.fee/1e8).toFixed(8)} BTC</li>`).join('')
+            : "<li>Data coming soon</li>";
+        document.querySelector('#transactions ul').innerHTML = txHtml;
+
+        // Total Transactions (approximate)
+        let stats = await fetch('https://mempool.space/api/v1/statistics').then(r=>r.json());
+        document.getElementById('total-tx').innerText = stats.count_total.toLocaleString();
+
+        // Chart data
+        let history = await fetch('https://mempool.space/api/v1/tx-stats/1d').then(r=>r.json());
+        let ctx = document.getElementById('tx-chart').getContext('2d');
+        let txDates = history.slice(-14).map(item => new Date(item[0]*1000).toLocaleDateString());
+        let txCounts = history.slice(-14).map(item => item[1]);
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: txDates,
+                datasets: [{
+                    label: "Tx Count",
+                    data: txCounts,
+                    borderColor: "#f7931a",
+                    backgroundColor: "rgba(247,147,26,0.3)",
+                    tension: 0.4
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+    } catch (e) {
+        // fail silently
+    }
+}
+updateStats();
 </script>
 </body>
 </html>
