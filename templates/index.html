@@ -80,7 +80,7 @@ async function updateStats() {
         // Blocks
         let blocks = await fetch('https://mempool.space/api/v1/blocks').then(r=>r.json());
         let blockList = blocks.slice(0,5).map(b=>
-            `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} tx – ${(b.reward / 1e8).toFixed(2)} BTC – ${(b.fees/1e8).toFixed(3)} BTC fees</li>`
+            `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} Transaction – ${(b.reward / 1e8).toFixed(2)} BTC – ${(b.fees/1e8).toFixed(3)} BTC fees</li>`
         ).join('');
         document.querySelector('#blocks ul').innerHTML = blockList;
         document.getElementById('final-block').innerText = blocks[0].height;
