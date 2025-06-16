@@ -65,7 +65,7 @@ async function updateStats() {
         // Blocks 
         let blocks = await fetch('https://mempool.space/testnet/api/v1/blocks').then(r=>r.json());
         let blockList = blocks.slice(0,5).map(b=>
-        `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} tx – ` +
+        `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} Transactions – ` +
         (b.reward ? (b.reward / 1e8).toFixed(2) + " BTC" : "—") + " – " +
         (b.fees ? (b.fees / 1e8).toFixed(3) + " BTC fees" : "—") +
         `</li>`
