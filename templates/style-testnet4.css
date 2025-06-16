@@ -1,1 +1,9 @@
-body { background: #f0f8ff; color: #000; } .header { background: #3399ff; color: white; padding: 10px; }
+
+body { font-family: 'Courier New', Courier, monospace; background: #0f1c29; color: #fff; }
+.top-bar, .nav-bar { background: #368af5; padding: 10px; }
+.logo img { width: 32px; vertical-align: middle; }
+.stats, .latest-info { display: flex; flex-wrap: wrap; justify-content: space-between; margin: 10px 0;}
+.box { border: 2px solid #368af5; background: #16213a; padding: 16px; margin: 10px; min-width: 260px; min-height: 80px; flex: 1; }
+.latest-block, .latest-tx { border: 2px solid #368af5; background: #16213a; padding: 16px; margin: 10px; min-width: 350px; min-height: 180px; flex: 1; }
+select, input, button { font-family: inherit; }
+::-webkit-scrollbar { width: 0; }
