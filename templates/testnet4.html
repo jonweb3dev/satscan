@@ -1,41 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Satscan - Testnet 4</title>
-  <link rel="stylesheet" href="style-testnet4.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satscan - Signet (Testnet 4)</title>
+    <link rel="stylesheet" href="style-signet.css">
 </head>
 <body>
-  <div class="header">
-    <div class="logo"><span class="logo-symbol">₿</span> Satscan <small>[Testnet 4]</small></div>
-    <div class="network-switcher">
-      <select onchange="location = this.value;">
-        <option value="index.html">Mainnet</option>
-        <option value="testnet3.html">Testnet 3</option>
-        <option value="testnet4.html" selected>Testnet 4</option>
-      </select>
+<header>
+    <div class="top-bar">
+        <span>₿ $<span id="btc-price">Loading...</span> (<span id="btc-change">0%</span>)</span>
+        <span>Transaction Fee: <span id="tx-fee">Loading...</span></span>
+        <span style="float:right">
+            <select onchange="location=this.value;">
+                <option value="index.html" >Mainnet</option>
+                <option value="testnet.html" >Testnet (v3)</option>
+                <option value="signet.html" selected>Signet (Testnet 4)</option>
+            </select>
+        </span>
     </div>
-  </div>
-  <div class="banner">
-    <input type="text" placeholder="Search blocks, transactions, addresses...">
-    <button>Search</button>
-  </div>
-  <div class="content">
-    <div class="stat">Latest Block: <span id="latestBlock">Loading...</span></div>
-    <div class="stat">Latest Transaction: <span id="latestTx">Loading...</span></div>
-  </div>
-  <script>
-    fetch('https://mempool.space/signet/api/blocks')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('latestBlock').textContent = data[0].height;
-      });
+    <div class="nav-bar">
+        <div class="logo"><img src="pixel-bitcoin-logo.png" alt="₿"> SATSCAN (Signet)</div>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Blockchain</a>
+            <a href="#">BRC20</a>
+            <a href="#">Ordinals</a>
+            <a href="#">More</a>
+        </nav>
+    </div>
+</header>
 
-    fetch('https://mempool.space/signet/api/mempool/recent')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('latestTx').textContent = data[0].value + " sats";
-      });
-  </script>
+<main>
+    <section class="search-bar" style="margin:16px 0;">
+        <input type="text" placeholder="Search TX, Address, Block..." style="width:400px;padding:6px;">
+    </section>
+    <section class="stats">
+        <div class="box">Bitcoin Price:<br> <span id="btc-price-stat">Loading...</span></div>
+        <div class="box">Market Cap:<br> <span id="market-cap">Loading...</span></div>
+        <div class="box">Transactions:<br> <span id="total-tx">Loading...</span></div>
+        <div class="box">Last Finalised Block:<br> <span id="final-block">Loading...</span></div>
+        <div class="box">Tx History (14 days):<br> <canvas id="tx-chart" width="220" height="70"></canvas></div>
+    </section>
+    <section class="latest-info">
+        <div class="latest-block">
+            <b>Latest Blocks</b>
+            <div id="blocks">
+                <!-- Fill with 5 latest blocks: Block #, Time, Miner, #Tx, Reward, Fees -->
+                <ul>
+                    <li>#123456 – 3 mins ago – Miner1 – 2000 tx – 6.25 BTC – 0.15 BTC fees</li>
+                    <li>#123455 – 10 mins ago – Miner2 – 1800 tx – 6.25 BTC – 0.12 BTC fees</li>
+                    <li>#123454 – 20 mins ago – Miner3 – 2100 tx – 6.25 BTC – 0.16 BTC fees</li>
+                    <li>#123453 – 32 mins ago – Miner4 – 1999 tx – 6.25 BTC – 0.14 BTC fees</li>
+                    <li>#123452 – 47 mins ago – Miner5 – 1750 tx – 6.25 BTC – 0.13 BTC fees</li>
+                </ul>
+            </div>
+        </div>
+        <div class="latest-tx">
+            <b>Latest Transactions</b>
+            <div id="transactions">
+                <!-- Fill with 5 latest transactions: From → To, Fee Paid -->
+                <ul>
+                    <li>From addr1 → addr2 – 0.00012 BTC</li>
+                    <li>From addr3 → addr4 – 0.00005 BTC</li>
+                    <li>From addr5 → addr6 – 0.00007 BTC</li>
+                    <li>From addr7 → addr8 – 0.00003 BTC</li>
+                    <li>From addr9 → addr10 – 0.00009 BTC</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Placeholder: fetch APIs here for live stats
+// Example for Mainnet (mempool.space):
+/*
+fetch('https://mempool.space/api/v1/blocks').then(r=>r.json()).then(blocks=>console.log(blocks));
+fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(r=>r.json()).then(console.log);
+*/
+</script>
 </body>
 </html>
