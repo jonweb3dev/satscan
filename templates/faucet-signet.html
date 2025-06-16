@@ -1,1 +1,151 @@
-Hello Signet
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Signet (Testnet 4) Faucet | Satscan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style-testnet.css">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    .faucet-box {
+      background: #191e18;
+      color: #e3ffe3;
+      border: 3px solid #27d158;
+      border-radius: 10px;
+      max-width: 450px;
+      margin: 40px auto;
+      padding: 32px 26px;
+      box-shadow: 0 2px 16px #111c;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .faucet-box label {
+      font-size: 1em;
+      margin-bottom: 8px;
+      display: block;
+      font-family: inherit;
+    }
+    .faucet-box input[type="text"] {
+      font-size: 1em;
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #37e27a;
+      margin-bottom: 18px;
+      background: #101511;
+      color: #80ff80;
+      font-family: inherit;
+    }
+    .faucet-box button {
+      background: #27d158;
+      color: #151d10;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 30px;
+      margin-top: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      box-shadow: 0 2px 0 #191e18;
+    }
+    .faucet-box button:disabled {
+      background: #4d4d4d;
+      color: #bbb;
+      cursor: not-allowed;
+    }
+    .balance-link {
+      color: #27d158;
+      font-size: 1em;
+      text-decoration: underline;
+      display: block;
+      margin-bottom: 18px;
+    }
+    .info {
+      background: #254522;
+      color: #ccffe6;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-size: 0.95em;
+      margin-bottom: 20px;
+    }
+    .valid { color: #27d158; }
+    .invalid { color: #e30038; }
+  </style>
+</head>
+<body>
+  <div class="faucet-box">
+    <h2>Testnet Faucet</h2>
+    <a class="balance-link" id="faucet-balance" href="#" target="_blank">Balance: Loading...</a>
+    <div class="info">
+      Complete the CAPTCHA to receive <b>0.0001 tBTC</b> every 24 hours.<br>
+      <span style="color:#aaffc3">Sign in</span> to receive up to <b>0.001 tBTC</b> per 24 hours!
+    </div>
+    <form id="faucet-form" autocomplete="off">
+      <label for="testnet-address">Your Testnet/Signet Address:</label>
+      <input type="text" id="testnet-address" name="testnet-address" required
+             placeholder="tb1... or sb1...">
+      <span id="addr-status"></span>
+
+      <!-- Google reCAPTCHA DEMO (use your site key in production) -->
+      <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+
+      <button id="claim-btn" type="submit" disabled>Receive 0.0001 tBTC</button>
+    </form>
+    <div id="message" style="margin-top:18px"></div>
+  </div>
+
+  <script>
+    // Simulated faucet balance (replace with AJAX call to your backend)
+    document.getElementById('faucet-balance').innerText = "Balance: 0.78 tBTC";
+    // document.getElementById('faucet-balance').href = 'https://mempool.space/testnet/address/<YOUR_FAUCET_ADDR>';
+
+    // Address Validation for Testnet/Signet
+    function isValidTestnetAddress(addr) {
+      // tb1... (testnet Bech32), 2... (legacy), m/n... (testnet P2PKH), or sb1... (signet)
+      return /^(tb1|2|m|n|sb1)[a-zA-HJ-NP-Z0-9]{10,}$/.test(addr);
+    }
+    const addrInput = document.getElementById('testnet-address');
+    const addrStatus = document.getElementById('addr-status');
+    const claimBtn = document.getElementById('claim-btn');
+
+    addrInput.addEventListener('input', function() {
+      if (isValidTestnetAddress(addrInput.value.trim())) {
+        addrStatus.innerHTML = "✔️ <span class='valid'>Looks good!</span>";
+        claimBtn.disabled = false;
+      } else {
+        addrStatus.innerHTML = "<span class='invalid'>Please enter a valid testnet or signet address.</span>";
+        claimBtn.disabled = true;
+      }
+    });
+
+    // Enable claim only after captcha
+    function enableClaimIfValid() {
+      if (
+        isValidTestnetAddress(addrInput.value.trim()) &&
+        grecaptcha && grecaptcha.getResponse().length
+      ) {
+        claimBtn.disabled = false;
+      } else {
+        claimBtn.disabled = true;
+      }
+    }
+    window.onCaptchaVerified = enableClaimIfValid;
+    window.onload = () => {
+      addrInput.dispatchEvent(new Event('input'));
+    };
+
+    // Simulate faucet send (replace with AJAX to your backend)
+    document.getElementById('faucet-form').addEventListener('submit', function(e){
+      e.preventDefault();
+      claimBtn.disabled = true;
+      document.getElementById('message').innerHTML = "Requesting coins...";
+      setTimeout(() => {
+        document.getElementById('message').innerHTML = "✅ 0.0001 tBTC sent to " + addrInput.value;
+        grecaptcha.reset();
+        addrInput.value = "";
+        claimBtn.disabled = true;
+      }, 1700);
+    });
+  </script>
+</body>
+</html>
