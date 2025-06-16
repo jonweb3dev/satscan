@@ -77,13 +77,17 @@ async function updateStats() {
         let fees = await fetch('https://mempool.space/api/v1/fees/recommended').then(r=>r.json());
         document.getElementById('tx-fee').innerText = fees.hourFee + " sats/vB";
 
-        // Blocks
+        // Blocks 
         let blocks = await fetch('https://mempool.space/api/v1/blocks').then(r=>r.json());
         let blockList = blocks.slice(0,5).map(b=>
-            `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} Transaction – ${(b.reward / 1e8).toFixed(2)} BTC – ${(b.fees/1e8).toFixed(3)} BTC fees</li>`
+          `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} tx – ` +
+        (b.reward ? (b.reward / 1e8).toFixed(2) + " BTC" : "—") + " – " +
+        (b.fees ? (b.fees / 1e8).toFixed(3) + " BTC fees" : "—") +
+        `</li>`
         ).join('');
         document.querySelector('#blocks ul').innerHTML = blockList;
         document.getElementById('final-block').innerText = blocks[0].height;
+
 
         // Transactions (from last block for demo)
         let txList = blocks[0].txs?.slice(0,5) || [];
