@@ -84,6 +84,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
+// Open a (blank for now) page for address clicks
+function openAddressPage(address) {
+  // This will open a blank page with the address in the URL (can build the page later)
+  window.open('/address.html?addr=' + address, '_blank');
+}
+
 async function updateStats() {
 try {
 const [
@@ -121,7 +127,7 @@ const blockList = blocksRes.slice(0, 5).map(b => `
 document.querySelector('#blocks').innerHTML = blockList;
 document.getElementById('final-block').textContent = blocksRes[0].height.toLocaleString();
 
-// --- NEW BLOCKSTREAM CODE FOR TRANSACTIONS ---
+// --- BLOCKSTREAM CODE FOR TRANSACTIONS ---
 const blockstreamBlocks = await fetch('https://blockstream.info/api/blocks').then(r => r.json());
 const latestBlockId = blockstreamBlocks[0].id;
 const latestBlockTxs = await fetch(`https://blockstream.info/api/block/${latestBlockId}/txs`).then(r => r.json());
@@ -129,30 +135,34 @@ const latestBlockTxs = await fetch(`https://blockstream.info/api/block/${latestB
 // Update yellow "Transactions" stat
 document.getElementById('total-tx').textContent = blocksRes[0].tx_count.toLocaleString();
 
-
 // Update green "Latest Transactions" list
 const txHtml = latestBlockTxs.slice(0, 5).map(tx => {
-  // From: first input address
-  let from = tx.vin[0]?.prevout?.scriptpubkey_address || 'N/A';
-  let to = tx.vout[0]?.scriptpubkey_address || 'N/A';
+  // Detect coinbase (mining reward) TX
+  const isCoinbase = !tx.vin[0]?.prevout;
+  const from = isCoinbase ? 'Coinbase Tx' : tx.vin[0]?.prevout?.scriptpubkey_address || 'N/A';
+  const to = tx.vout[0]?.scriptpubkey_address || 'N/A';
   const amount = tx.vout[0]?.value ? (tx.vout[0].value / 1e8).toFixed(8) : 'N/A';
-  const fee = tx.fee ? (tx.fee / 1e8).toFixed(8) : 'N/A';
+  const fee = (typeof tx.fee === "number") ? (tx.fee / 1e8).toFixed(8) : (isCoinbase ? '—' : 'N/A');
 
-  const shortFrom = from !== 'N/A' ? (from.slice(0,5) + '...' + from.slice(-5)) : 'N/A';
-  const shortTo = to !== 'N/A' ? (to.slice(0,5) + '...' + to.slice(-5)) : 'N/A';
+  const shortFrom = from !== 'N/A' && from !== 'Coinbase Tx'
+    ? `<a href="#" onclick="openAddressPage('${from}'); return false;">${from.slice(0,5)}...${from.slice(-5)}</a>`
+    : from;
+  const shortTo = to !== 'N/A'
+    ? `<a href="#" onclick="openAddressPage('${to}'); return false;">${to.slice(0,5)}...${to.slice(-5)}</a>`
+    : to;
 
   return `
-    <li style="margin-bottom: 8px;">
-      <span><b>From:</b> ${shortFrom}</span> &nbsp; 
-      <span><b>To:</b> ${shortTo}</span> &nbsp; 
-      <span><b>Amount:</b> ${amount} BTC</span> &nbsp;
+    <li class="tx-row">
+      <span><b>From:</b> ${shortFrom}</span> 
+      <span><b>To:</b> ${shortTo}</span> 
+      <span><b>Amount:</b> ${amount} BTC</span>
       <span><b>Fee:</b> ${fee} BTC</span>
     </li>
   `;
 }).join('');
 document.getElementById('transactions').innerHTML = txHtml;
 
-// Leave your chart update and error handling as before
+// Chart update left as before
 
 } catch (error) {
 console.error('Failed to update stats:', error);
