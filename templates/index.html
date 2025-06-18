@@ -84,10 +84,52 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-// Open a (blank for now) page for address clicks
+// Mining pool signatures
+const POOL_TAGS = [
+  { tag: '/slush/', name: 'SlushPool' },
+  { tag: '/foundry/', name: 'Foundry' },
+  { tag: '/f2pool/', name: 'F2Pool' },
+  { tag: '/antpool/', name: 'AntPool' },
+  { tag: 'BTC.COM', name: 'BTC.com' },
+  { tag: 'ViaBTC', name: 'ViaBTC' },
+  { tag: 'binance', name: 'Binance Pool' },
+  { tag: 'EMCDPool', name: 'EMCD' },
+  { tag: 'poolin', name: 'Poolin' },
+  { tag: 'sigmapool', name: 'SigmaPool' }
+  // Add more as you find them!
+];
+
+function hexToAscii(hex) {
+  try {
+    return hex.match(/.{1,2}/g).map(b => String.fromCharCode(parseInt(b, 16))).join('');
+  } catch { return ""; }
+}
+
+// Open address page
 function openAddressPage(address) {
-  // This will open a blank page with the address in the URL (can build the page later)
   window.open('/address.html?addr=' + address, '_blank');
+}
+
+// Fetch pool name/address for a block
+async function getBlockMiner(blockId) {
+  try {
+    const txids = await fetch(`https://blockstream.info/api/block/${blockId}/txids`).then(r => r.json());
+    const coinbaseTxId = txids[0];
+    const coinbaseTx = await fetch(`https://blockstream.info/api/tx/${coinbaseTxId}`).then(r => r.json());
+    const minerAddr = coinbaseTx.vout[0]?.scriptpubkey_address || '';
+    const coinbaseScriptHex = coinbaseTx.vin[0]?.coinbase || '';
+    const coinbaseAscii = hexToAscii(coinbaseScriptHex).toLowerCase();
+    let poolName = '';
+    for (const pool of POOL_TAGS) {
+      if (coinbaseAscii.includes(pool.tag.toLowerCase())) {
+        poolName = pool.name;
+        break;
+      }
+    }
+    return { poolName, minerAddr };
+  } catch {
+    return { poolName: '', minerAddr: '' };
+  }
 }
 
 async function updateStats() {
@@ -113,17 +155,26 @@ document.getElementById('market-cap').textContent = cap.toLocaleString('en-US', 
 // Update transaction fees
 document.getElementById('tx-fee').textContent = `${feesRes.hourFee} sats/vB`;
 
-// Update blocks
-const blockList = blocksRes.slice(0, 5).map(b => `
-<li class="block-row">
-<span>#${b.height}</span>
-<span>${new Date(b.timestamp * 1000).toLocaleTimeString()}</span>
-<span>${b.extras?.miner || 'Unknown'}</span>
-<span>${b.tx_count} Tx</span>
-<span>${b.reward ? (b.reward / 1e8).toFixed(2) + ' BTC' : '—'}</span>
-<span>${b.fees ? (b.fees / 1e8).toFixed(3) + ' BTC fees' : '—'}</span>
-</li>
-`).join('');
+// Render Latest Blocks with pool name/address, card style, and bold text
+let blockList = '';
+for (let b of blocksRes.slice(0, 5)) {
+  const { poolName, minerAddr } = await getBlockMiner(b.id);
+  let minerLabel = poolName
+    ? `<b>Miner:</b> <span style="color:#f28c38">${poolName}</span>`
+    : (minerAddr
+        ? `<b>Miner:</b> <a href="#" style="color:#f28c38;text-decoration:underline dotted;font-weight:500;" onclick="openAddressPage('${minerAddr}');return false;">${minerAddr.slice(0,5)}...${minerAddr.slice(-5)}</a>`
+        : `<b>Miner:</b> Unknown`);
+  blockList += `
+    <li class="block-row">
+      <span><b>Height:</b> #${b.height}</span>
+      <span><b>Time:</b> ${new Date(b.timestamp * 1000).toLocaleTimeString()}</span>
+      <span>${minerLabel}</span>
+      <span><b>Tx Count:</b> ${b.tx_count}</span>
+      <span><b>Reward:</b> ${b.reward ? (b.reward / 1e8).toFixed(8) + ' BTC' : '—'}</span>
+      <span><b>Fees:</b> ${b.fees ? (b.fees / 1e8).toFixed(8) + ' BTC' : '—'}</span>
+    </li>
+  `;
+}
 document.querySelector('#blocks').innerHTML = blockList;
 document.getElementById('final-block').textContent = blocksRes[0].height.toLocaleString();
 
@@ -137,7 +188,6 @@ document.getElementById('total-tx').textContent = blocksRes[0].tx_count.toLocale
 
 // Update green "Latest Transactions" list
 const txHtml = latestBlockTxs.slice(0, 5).map(tx => {
-  // Detect coinbase (mining reward) TX
   const isCoinbase = !tx.vin[0]?.prevout;
   const from = isCoinbase ? 'Coinbase Tx' : tx.vin[0]?.prevout?.scriptpubkey_address || 'N/A';
   const to = tx.vout[0]?.scriptpubkey_address || 'N/A';
@@ -162,8 +212,6 @@ const txHtml = latestBlockTxs.slice(0, 5).map(tx => {
 }).join('');
 document.getElementById('transactions').innerHTML = txHtml;
 
-// Chart update left as before
-
 } catch (error) {
 console.error('Failed to update stats:', error);
 document.querySelectorAll('[aria-live="polite"]').forEach(el => {
@@ -177,5 +225,3 @@ el.textContent = 'Data unavailable';
 updateStats();
 setInterval(updateStats, 60000);
 </script>
-</body>
-</html>
