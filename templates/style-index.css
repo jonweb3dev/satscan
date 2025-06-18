@@ -288,7 +288,7 @@ text-align: center;
   font-weight: 500;
   cursor: pointer;
 }
-##blocks li.block-row {
+#blocks li.block-row {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(60, 60, 60, 0.06);
@@ -302,7 +302,7 @@ text-align: center;
   align-items: center;
 }
 
-##blocks li.block-row span {
+#blocks li.block-row span {
   display: block;
   min-width: 145px;
   font-size: 1rem;
