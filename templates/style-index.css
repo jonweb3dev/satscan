@@ -297,7 +297,6 @@ text-align: center;
   border: 1px solid #f4f4f4;
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   gap: 8px 18px;
   align-items: center;
 }
