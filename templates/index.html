@@ -86,13 +86,14 @@
 <script>
 async function updateStats() {
 try {
-// Fetch all data concurrently
-const [coingeckoRes, feesRes, blocksRes, statsRes, historyRes] = await Promise.all([
-fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r => r.json()),
-fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
-fetch('https://mempool.space/api/v1/blocks').then(r => r.json()),
-fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
-fetch('https://mempool.space/api/v1/blocks').then(r => r.json())
+const [
+  coingeckoRes, 
+  feesRes, 
+  blocksRes
+] = await Promise.all([
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r => r.json()),
+  fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
+  fetch('https://mempool.space/api/v1/blocks').then(r => r.json())
 ]);
 
 // Update price and market cap
@@ -120,53 +121,40 @@ const blockList = blocksRes.slice(0, 5).map(b => `
 document.querySelector('#blocks').innerHTML = blockList;
 document.getElementById('final-block').textContent = blocksRes[0].height.toLocaleString();
 
-// Update transactions (mocked from block data)
-const txList = blocksRes[0].txs?.slice(0, 5) || [];
-const txHtml = txList.length
-? txList.map(tx => `
-<li>
-<span>${tx.txid.slice(0, 6)}...${tx.txid.slice(-6)}</span>
-<span>${(tx.fee / 1e8).toFixed(8)} BTC</span>
-</li>
-`).join('')
-: '<li>Data coming soon</li>';
-document.querySelector('#transactions').innerHTML = txHtml;
+// --- NEW BLOCKSTREAM CODE FOR TRANSACTIONS ---
+const blockstreamBlocks = await fetch('https://blockstream.info/api/blocks').then(r => r.json());
+const latestBlockId = blockstreamBlocks[0].id;
+const latestBlockTxs = await fetch(`https://blockstream.info/api/block/${latestBlockId}/txs`).then(r => r.json());
 
-// Update total transactions
-document.getElementById('total-tx').textContent = statsRes.count_total.toLocaleString();
+// Update yellow "Transactions" stat
+document.getElementById('total-tx').textContent = latestBlockTxs.length.toLocaleString();
 
-// Update transaction history chart
-const history = historyRes.slice(-14);
-const ctx = document.getElementById('tx-chart').getContext('2d');
-new Chart(ctx, {
-type: 'line',
-data: {
-labels: history.map(item => new Date(item[0] * 1000).toLocaleDateString()),
-datasets: [{
-label: 'Transaction Count',
-data: history.map(item => item[1]),
-borderColor: '#f28c38',
-backgroundColor: 'rgba(242, 140, 56, 0.2)',
-fill: true,
-tension: 0.4,
-pointRadius: 3
-}]
-},
-options: {
-responsive: true,
-plugins: {
-legend: { display: false },
-tooltip: { mode: 'index', intersect: false }
-},
-scales: {
-x: { display: true, grid: { display: false } },
-y: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
-}
-}
-});
+// Update green "Latest Transactions" list
+const txHtml = latestBlockTxs.slice(0, 5).map(tx => {
+  // From: first input address
+  let from = tx.vin[0]?.prevout?.scriptpubkey_address || 'N/A';
+  let to = tx.vout[0]?.scriptpubkey_address || 'N/A';
+  const amount = tx.vout[0]?.value ? (tx.vout[0].value / 1e8).toFixed(8) : 'N/A';
+  const fee = tx.fee ? (tx.fee / 1e8).toFixed(8) : 'N/A';
+
+  const shortFrom = from !== 'N/A' ? (from.slice(0,5) + '...' + from.slice(-5)) : 'N/A';
+  const shortTo = to !== 'N/A' ? (to.slice(0,5) + '...' + to.slice(-5)) : 'N/A';
+
+  return `
+    <li style="margin-bottom: 8px;">
+      <span><b>From:</b> ${shortFrom}</span> &nbsp; 
+      <span><b>To:</b> ${shortTo}</span> &nbsp; 
+      <span><b>Amount:</b> ${amount} BTC</span> &nbsp;
+      <span><b>Fee:</b> ${fee} BTC</span>
+    </li>
+  `;
+}).join('');
+document.getElementById('transactions').innerHTML = txHtml;
+
+// Leave your chart update and error handling as before
+
 } catch (error) {
 console.error('Failed to update stats:', error);
-// Display fallback message for critical elements
 document.querySelectorAll('[aria-live="polite"]').forEach(el => {
 if (el.textContent.includes('Loading')) {
 el.textContent = 'Data unavailable';
@@ -175,7 +163,6 @@ el.textContent = 'Data unavailable';
 }
 }
 
-// Initial update and periodic refresh (every 60 seconds)
 updateStats();
 setInterval(updateStats, 60000);
 </script>
