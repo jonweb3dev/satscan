@@ -91,8 +91,8 @@ const [coingeckoRes, feesRes, blocksRes, statsRes, historyRes] = await Promise.a
 fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r => r.json()),
 fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
 fetch('https://mempool.space/api/v1/blocks').then(r => r.json()),
-fetch('https://mempool.space/api/v1/statistics').then(r => r.json()),
-fetch('https://mempool.space/api/v1/tx-stats/1d').then(r => r.json())
+fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
+fetch('https://mempool.space/api/v1/blocks').then(r => r.json())
 ]);
 
 // Update price and market cap
