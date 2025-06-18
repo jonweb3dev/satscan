@@ -1,130 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Satscan - Mainnet</title>
-    <link rel="stylesheet" href="style-index.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satscan - Mainnet</title>
+<link rel="stylesheet" href="style-index.css">
 </head>
 <body>
-<header>
-    <div class="top-bar">
-        <span>₿ $<span id="btc-price">Loading...</span> (<span id="btc-change">0%</span>)</span>
-        <span>Transaction Fee: <span id="tx-fee">Loading...</span></span>
-        <span style="float:right">
-            <select onchange="location=this.value;">
-                <option value="index.html" selected>Mainnet</option>
-                <option value="testnet.html">Testnet (v3)</option>
-                <option value="signet.html">Signet (Testnet 4)</option>
-            </select>
-        </span>
-    </div>
-    <div class="nav-bar">
-        <div class="logo"><img src="pixel-bitcoin-logo.png" alt="₿"> SATSCAN</div>
-        <nav>
-            <a href="#">Home</a>
-            <a href="#">Blockchain</a>
-            <a href="#">BRC20</a>
-            <a href="#">Ordinals</a>
-            <a href="#">Podcasts</a>
-            <a href="#">More</a>
-        </nav>
-    </div>
+<header class="header">
+<div class="top-bar">
+<div class="market-info">
+<span>₿ $<span id="btc-price" aria-live="polite">Loading...</span> (<span id="btc-change" aria-live="polite">0%</span>)</span>
+<span>Transaction Fee: <span id="tx-fee" aria-live="polite">Loading...</span></span>
+</div>
+<select class="network-select" onchange="location = this.value;" aria-label="Select network">
+<option value="index.html" selected>Mainnet</option>
+<option value="testnet.html">Testnet (v3)</option>
+<option value="signet.html">Signet (Testnet 4)</option>
+</select>
+</div>
+<div class="nav-bar">
+<div class="logo">
+<img src="pixel-bitcoin-logo.png" alt="Bitcoin logo" width="32" height="32">
+<span>SATSCAN</span>
+</div>
+<nav aria-label="Main navigation">
+<ul>
+<li><a href="#" class="active">Home</a></li>
+<li><a href="#">Blockchain</a></li>
+<li><a href="#">BRC20</a></li>
+<li><a href="#">Ordinals</a></li>
+<li><a href="#">Podcasts</a></li>
+<li><a href="#">More</a></li>
+</ul>
+</nav>
+</div>
 </header>
 
-<main>
-    <section class="search-bar" style="margin:16px 0;">
-        <input type="text" placeholder="Search TX, Address, Block..." style="width:400px;padding:6px;">
-    </section>
-    <section class="stats">
-        <div class='box'>Bitcoin Price:<br> <span id='btc-price-stat'>Loading...</span></div>
-        <div class='box'>Market Cap:<br> <span id='market-cap'>Loading...</span></div>
-        <div class="box">Transactions:<br> <span id="total-tx">Loading...</span></div>
-        <div class="box">Last Finalised Block:<br> <span id="final-block">Loading...</span></div>
-        <div class="box">Tx History (14 days):<br> <canvas id="tx-chart" width="220" height="70"></canvas></div>
-    </section>
-    <section class="latest-info">
-        <div class="latest-block">
-            <b>Latest Blocks</b>
-            <div id="blocks">
-                <ul><li>Loading...</li></ul>
-            </div>
-        </div>
-        <div class="latest-tx">
-            <b>Latest Transactions</b>
-            <div id="transactions">
-                <ul><li>Loading...</li></ul>
-            </div>
-        </div>
-    </section>
+<main class="main-content">
+<section class="search-bar">
+<form role="search" aria-label="Search blockchain data">
+<input type="search" placeholder="Search TX, Address, Block..." aria-label="Search transactions, addresses, or blocks">
+<button type="submit" aria-label="Search"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></button>
+</form>
+</section>
+<section class="stats" aria-label="Blockchain statistics">
+<div class="stat-box">
+<h3>Bitcoin Price</h3>
+<span id="btc-price-stat" aria-live="polite">Loading...</span>
+</div>
+<div class="stat-box">
+<h3>Market Cap</h3>
+<span id="market-cap" aria-live="polite">Loading...</span>
+</div>
+<div class="stat-box">
+<h3>Transactions</h3>
+<span id="total-tx" aria-live="polite">Loading...</span>
+</div>
+<div class="stat-box">
+<h3>Last Finalized Block</h3>
+<span id="final-block" aria-live="polite">Loading...</span>
+</div>
+<div class="stat-box chart-box">
+<h3>Tx History (14 days)</h3>
+<canvas id="tx-chart" aria-label="Transaction history chart"></canvas>
+</div>
+</section>
+<section class="latest-info" aria-label="Latest blockchain data">
+<div class="latest-block">
+<h2>Latest Blocks</h2>
+<ul id="blocks" aria-live="polite">
+<li>Loading...</li>
+</ul>
+</div>
+<div class="latest-tx">
+<h2>Latest Transactions</h2>
+<ul id="transactions" aria-live="polite">
+<li>Loading...</li>
+</ul>
+</div>
+</section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 async function updateStats() {
-    try {
-        // Mainnet price/market cap
-        let coingecko = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r=>r.json());
-        let price = coingecko.bitcoin.usd;
-        let cap = coingecko.bitcoin.usd_market_cap;
-        let change = coingecko.bitcoin.usd_24h_change;
+try {
+// Fetch all data concurrently
+const [coingeckoRes, feesRes, blocksRes, statsRes, historyRes] = await Promise.all([
+fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_change=true').then(r => r.json()),
+fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.json()),
+fetch('https://mempool.space/api/v1/blocks').then(r => r.json()),
+fetch('https://mempool.space/api/v1/statistics').then(r => r.json()),
+fetch('https://mempool.space/api/v1/tx-stats/1d').then(r => r.json())
+]);
 
-        document.getElementById('btc-price').innerText = price.toLocaleString();
-        document.getElementById('btc-change').innerText = (change > 0 ? '+' : '') + change.toFixed(2) + '%';
-        document.getElementById('btc-change').style.color = change >= 0 ? "#6be481" : "#ff5959";
-        document.getElementById('btc-price-stat').innerText = "$" + price.toLocaleString();
-        document.getElementById('market-cap').innerText = "$" + Math.round(cap).toLocaleString();
+// Update price and market cap
+const { usd: price, usd_market_cap: cap, usd_24h_change: change } = coingeckoRes.bitcoin;
+document.getElementById('btc-price').textContent = price.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+document.getElementById('btc-change').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+document.getElementById('btc-change').style.color = change >= 0 ? '#34c759' : '#ff3b30';
+document.getElementById('btc-price-stat').textContent = price.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+document.getElementById('market-cap').textContent = cap.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
 
-        // Fees
-        let fees = await fetch('https://mempool.space/api/v1/fees/recommended').then(r=>r.json());
-        document.getElementById('tx-fee').innerText = fees.hourFee + " sats/vB";
+// Update transaction fees
+document.getElementById('tx-fee').textContent = `${feesRes.hourFee} sats/vB`;
 
-        // Blocks 
-        let blocks = await fetch('https://mempool.space/api/v1/blocks').then(r=>r.json());
-        let blockList = blocks.slice(0,5).map(b=>
-          `<li>#${b.height} – ${new Date(b.timestamp*1000).toLocaleTimeString()} – ${b.extras?.miner || "Miner"} – ${b.tx_count} Transactions – ` +
-        (b.reward ? (b.reward / 1e8).toFixed(2) + " BTC" : "—") + " – " +
-        (b.fees ? (b.fees / 1e8).toFixed(3) + " BTC fees" : "—") +
-        `</li>`
-        ).join('');
-        document.querySelector('#blocks ul').innerHTML = blockList;
-        document.getElementById('final-block').innerText = blocks[0].height;
+// Update blocks
+const blockList = blocksRes.slice(0, 5).map(b => `
+<li>
+<span>#${b.height}</span>
+<span>${new Date(b.timestamp * 1000).toLocaleTimeString()}</span>
+<span>${b.extras?.miner || 'Unknown'}</span>
+<span>${b.tx_count} Tx</span>
+<span>${b.reward ? (b.reward / 1e8).toFixed(2) + ' BTC' : '—'}</span>
+<span>${b.fees ? (b.fees / 1e8).toFixed(3) + ' BTC fees' : '—'}</span>
+</li>
+`).join('');
+document.querySelector('#blocks').innerHTML = blockList;
+document.getElementById('final-block').textContent = blocksRes[0].height.toLocaleString();
 
+// Update transactions (mocked from block data)
+const txList = blocksRes[0].txs?.slice(0, 5) || [];
+const txHtml = txList.length
+? txList.map(tx => `
+<li>
+<span>${tx.txid.slice(0, 6)}...${tx.txid.slice(-6)}</span>
+<span>${(tx.fee / 1e8).toFixed(8)} BTC</span>
+</li>
+`).join('')
+: '<li>Data coming soon</li>';
+document.querySelector('#transactions').innerHTML = txHtml;
 
-        // Transactions (from last block for demo)
-        let txList = blocks[0].txs?.slice(0,5) || [];
-        let txHtml = txList.length
-            ? txList.map(tx=>`<li>${tx.txid.slice(0,6)}... → ...${tx.txid.slice(-6)} – ${(tx.fee/1e8).toFixed(8)} BTC</li>`).join('')
-            : "<li>Data coming soon</li>";
-        document.querySelector('#transactions ul').innerHTML = txHtml;
+// Update total transactions
+document.getElementById('total-tx').textContent = statsRes.count_total.toLocaleString();
 
-        // Total Transactions (approximate)
-        let stats = await fetch('https://mempool.space/api/v1/statistics').then(r=>r.json());
-        document.getElementById('total-tx').innerText = stats.count_total.toLocaleString();
-
-        // Chart data
-        let history = await fetch('https://mempool.space/api/v1/tx-stats/1d').then(r=>r.json());
-        let ctx = document.getElementById('tx-chart').getContext('2d');
-        let txDates = history.slice(-14).map(item => new Date(item[0]*1000).toLocaleDateString());
-        let txCounts = history.slice(-14).map(item => item[1]);
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: txDates,
-                datasets: [{
-                    label: "Tx Count",
-                    data: txCounts,
-                    borderColor: "#f7931a",
-                    backgroundColor: "rgba(247,147,26,0.3)",
-                    tension: 0.4
-                }]
-            },
-            options: { plugins: { legend: { display: false } } }
-        });
-    } catch (e) {
-        // fail silently
-    }
+// Update transaction history chart
+const history = historyRes.slice(-14);
+const ctx = document.getElementById('tx-chart').getContext('2d');
+new Chart(ctx, {
+type: 'line',
+data: {
+labels: history.map(item => new Date(item[0] * 1000).toLocaleDateString()),
+datasets: [{
+label: 'Transaction Count',
+data: history.map(item => item[1]),
+borderColor: '#f28c38',
+backgroundColor: 'rgba(242, 140, 56, 0.2)',
+fill: true,
+tension: 0.4,
+pointRadius: 3
+}]
+},
+options: {
+responsive: true,
+plugins: {
+legend: { display: false },
+tooltip: { mode: 'index', intersect: false }
+},
+scales: {
+x: { display: true, grid: { display: false } },
+y: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
 }
+}
+});
+} catch (error) {
+console.error('Failed to update stats:', error);
+// Display fallback message for critical elements
+document.querySelectorAll('[aria-live="polite"]').forEach(el => {
+if (el.textContent.includes('Loading')) {
+el.textContent = 'Data unavailable';
+}
+});
+}
+}
+
+// Initial update and periodic refresh (every 60 seconds)
 updateStats();
+setInterval(updateStats, 60000);
 </script>
 </body>
 </html>
