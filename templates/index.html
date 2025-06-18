@@ -115,7 +115,7 @@ document.getElementById('tx-fee').textContent = `${feesRes.hourFee} sats/vB`;
 
 // Update blocks
 const blockList = blocksRes.slice(0, 5).map(b => `
-<li>
+<li class="block-row">
 <span>#${b.height}</span>
 <span>${new Date(b.timestamp * 1000).toLocaleTimeString()}</span>
 <span>${b.extras?.miner || 'Unknown'}</span>
