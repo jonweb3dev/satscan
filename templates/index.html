@@ -127,7 +127,8 @@ const latestBlockId = blockstreamBlocks[0].id;
 const latestBlockTxs = await fetch(`https://blockstream.info/api/block/${latestBlockId}/txs`).then(r => r.json());
 
 // Update yellow "Transactions" stat
-document.getElementById('total-tx').textContent = latestBlockTxs.length.toLocaleString();
+document.getElementById('total-tx').textContent = blocksRes[0].tx_count.toLocaleString();
+
 
 // Update green "Latest Transactions" list
 const txHtml = latestBlockTxs.slice(0, 5).map(tx => {
